@@ -2,16 +2,17 @@
 # -*- coding: utf-8 -*-
 
 # 引入模組
-import MySQLdb,threading
+import MySQLdb,threading,sys
 from termcolor import colored
 from time import gmtime, strftime
+from ConfigParser import SafeConfigParser
 
 time = strftime("%H:%M", gmtime())
 # 連接到 MySQL
 
 def checker():
     # 執行 SQL 語句
-    db = MySQLdb.connect(host="localhost", user="root", passwd="", db="spgame", unix_socket='/Applications/XAMPP/xamppfiles/var/mysql/mysql.sock')
+    db = MySQLdb.connect(host, user, password, database, unix_socket='/Applications/XAMPP/xamppfiles/var/mysql/mysql.sock')
     cursor = db.cursor()
     cursor.execute("SELECT `usr_id`, `usr_name`, usr_water, usr_fire, usr_earth, usr_wind FROM `users` WHERE usr_water < 0 OR usr_fire < 0 OR usr_earth < 0 OR usr_wind < 0")
     result = cursor.fetchall()
@@ -38,9 +39,17 @@ def checker():
             db.commit()
             print colored( "[LOG] ID:" + str(record[0]) + ". " + "Name:" + str(record[1]) + ". wind white card abnormal, but this fixed."  + time, "red" )
     global t        #Notice: use global variable!
-    t = threading.Timer(300.0, checker)
+    t = threading.Timer(float(looptime), checker)
     t.start()
 
 if __name__ == '__main__':
-    t = threading.Timer(300.0, checker)
+    parser = SafeConfigParser()
+    parser.read('config.ini')
+    global host, user, password, db, looptime
+    host = parser.get('DB', 'ip')
+    user = parser.get('DB', 'user')
+    password = parser.get('DB', 'pw')
+    database = parser.get('DB', 'db')
+    looptime = parser.get('CHECKER', 'looptime')
+    t = threading.Timer(float(looptime), checker)
     t.start()
